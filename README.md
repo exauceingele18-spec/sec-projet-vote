@@ -1,9 +1,9 @@
 # Plateforme de Vote Électronique Sécurisé — Groupe 28
 
 Projet académique — Cours *Protocoles de Sécurité Réseau* (M1 MSI, UNIKIN)
-Sujet : Cryptographie Appliquée
+Sujet : Développement d'une plateforme web de vote electronique garanstissant confidentialité, intégrité et vérifiabilité.
 
-Plateforme web de vote pour l'élection du Bureau de Promotion (Chef de Promotion,
+Pour ce cas nous avons opter de pencher sur l'élection du Bureau de Promotion (Chef de Promotion,
 Chef de Promotion Adjoint, Secrétaire de Promotion), avec chiffrement homomorphe
 des votes (cryptosystème de Paillier) et anonymisation des matricules (SHA-256).
 
