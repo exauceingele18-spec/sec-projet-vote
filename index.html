@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Élection du Bureau de Promotion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="min-h-screen flex flex-col justify-between font-sans">
+
+    <!-- Navbar -->
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 rounded-xl">
+                    <i class="fa-solid fa-graduation-cap text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-white">Élection du Bureau de Promotion</h1>
+                    <p class="text-xs text-slate-400">Système Électoral avec Sécurité Antifraude</p>
+                </div>
+            </div>
+
+            <nav class="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+                <button onclick="switchTab('voter')" id="tab-voter" class="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white transition-all">
+                    <i class="fa-solid fa-check-to-slot mr-2"></i>Urne
+                </button>
+                <button onclick="switchTab('feed')" id="tab-feed" class="px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+                    <i class="fa-solid fa-comments mr-2"></i>Avis
+                </button>
+                <button onclick="switchTab('results')" id="tab-results" class="px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+                    <i class="fa-solid fa-chart-pie mr-2"></i>Résultats
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ÉCRAN D'ALERTE SÉCURITÉ / ALARME TRICHERIE -->
+    <div id="alarmOverlay" class="fixed inset-0 z-[100] bg-rose-950/95 backdrop-blur-xl hidden flex-col items-center justify-center p-6 text-center animate-pulse">
+        <div class="p-6 bg-rose-600/30 border-2 border-rose-500 text-rose-300 rounded-full mb-6">
+            <i class="fa-solid fa-triangle-exclamation text-6xl"></i>
+        </div>
+        <h1 class="text-4xl font-extrabold text-white tracking-widest mb-2 uppercase">Alerte Tentative de Tricherie !</h1>
+        <p class="text-rose-200 text-lg mb-6">Un matricule ayant déjà voté a tenté de forcer le système 3 fois de suite.</p>
+
+        <div class="bg-slate-950/80 border border-rose-500/50 p-6 rounded-2xl max-w-md w-full mb-6">
+            <span class="text-xs text-slate-400 block mb-1">MATRICULE EN FRAUDE :</span>
+            <span id="alarmMatricule" class="text-3xl font-mono font-bold text-amber-400 tracking-wider">---</span>
+        </div>
+
+        <div class="flex items-center gap-3 bg-slate-900/90 px-6 py-3 rounded-full border border-rose-500/40">
+            <i class="fa-solid fa-clock text-rose-400 text-xl"></i>
+            <span class="text-sm font-medium text-slate-300">Système verrouillé pendant encore : <strong id="lockTimer" class="text-rose-400 font-mono text-lg">60</strong>s</span>
+        </div>
+    </div>
+
+    <main class="max-w-4xl w-full mx-auto p-4 my-6 flex-1">
+
+        <!-- Espace Votant -->
+        <section id="sec-voter" class="space-y-6">
+
+            <!-- Bandeau de statut du scrutin -->
+            <div id="votingStatusBanner" class="hidden p-4 rounded-xl border text-sm"></div>
+
+            <!-- ETAPE 0 : Identification -->
+            <div id="step-id" class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <div class="text-center max-w-md mx-auto space-y-4">
+                    <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-full w-16 h-16 flex items-center justify-center mx-auto border border-indigo-500/20">
+                        <i class="fa-solid fa-id-card text-2xl"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-white">Identification de l'Électeur</h2>
+                    <p class="text-xs text-slate-400">Entrez votre matricule (format MAT suivi de 5 chiffres, majuscules) pour accéder au bulletin.</p>
+
+                    <div id="idErrorAlert" class="hidden p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs rounded-xl"></div>
+
+                    <input type="text" id="voterMatricule" placeholder="Ex: MAT12345" autocomplete="off" maxlength="8"
+                        class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-indigo-500 text-center text-slate-100 font-mono outline-none">
+
+                    <button id="startVoteBtn" onclick="checkAndStartSession()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2">
+                        Commencer le Vote <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ETAPE VOTES (CP, CPA, SECRETAIRE) -->
+            <div id="step-voting" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+                    <span id="roleBadge" class="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full text-xs font-bold">
+                        ÉLECTION DU CP
+                    </span>
+                    <span id="stepCounter" class="text-xs text-slate-400 font-mono">Étape 1 sur 3</span>
+                </div>
+
+                <div id="candidatesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"></div>
+
+                <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 mb-6 space-y-2">
+                    <label class="block text-xs font-medium text-slate-300 flex items-center gap-2">
+                        <i class="fa-regular fa-comment-dots text-indigo-400"></i> Remarque / Avis pour ce poste (Facultatif)
+                    </label>
+                    <textarea id="roleComment" rows="2" placeholder="Pourquoi ce choix ? (Optionnel et anonyme)"
+                        class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:ring-1 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+
+                <button onclick="nextRoleStep()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl shadow-lg transition-all flex justify-center items-center gap-2">
+                    <span id="btnNextText">Valider et Passer au CPA</span> <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- ETAPE FINALE -->
+            <div id="step-thanks" class="hidden bg-slate-900 border border-emerald-500/30 rounded-2xl p-8 text-center space-y-4">
+                <div class="p-4 bg-emerald-500/10 text-emerald-400 rounded-full w-20 h-20 flex items-center justify-center mx-auto border border-emerald-500/20">
+                    <i class="fa-solid fa-circle-check text-4xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-emerald-300">Merci pour vos votes !</h2>
+                <p class="text-sm text-slate-300 max-w-md mx-auto">
+                    Vos choix pour le CP, CPA et Secrétaire ont été chiffrés et déposés dans l'urne, de manière anonyme.<br>
+                    <span class="text-emerald-400 font-medium">Nous vous disons à très bientôt pour les résultats !</span>
+                </p>
+                <div class="pt-4">
+                    <button onclick="resetToHome()" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl border border-slate-700 transition-all">
+                        <i class="fa-solid fa-rotate-left mr-2"></i> Session Suivante
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Fil des Avis -->
+        <section id="sec-feed" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <h2 class="text-xl font-semibold text-white mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-comments text-indigo-400"></i> Expression Anonyme des Étudiants
+                </h2>
+                <div id="commentsList" class="space-y-3 mt-4"></div>
+            </div>
+        </section>
+
+        <!-- Résultats publics -->
+        <section id="sec-results" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <h2 class="text-xl font-semibold text-white mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-indigo-400"></i> Résultats
+                </h2>
+                <div id="publicResultsContent" class="mt-4"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="border-t border-slate-800 bg-slate-900 py-4 text-center text-xs text-slate-500">
+        Plateforme d'Élection du Bureau de Promotion — UNIKIN | Groupe 28
+    </footer>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000/api";
+        const MATRICULE_REGEX = /^MAT\d{5}$/;
+
+        let allCandidates = {};
+        let currentVoterId = "";
+        let currentStepIndex = 0;
+        const rolesOrder = ["CP", "CPA", "SECRETAIRE"];
+        const roleLabels = { "CP": "CHEF DE PROMOTION (CP)", "CPA": "CHEF DE PROMOTION ADJOINT (CPA)", "SECRETAIRE": "SECRÉTAIRE DE PROMOTION" };
+        let voterChoices = [];
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const res = await fetch(`${API_URL}/candidates`);
+            allCandidates = await res.json();
+            await refreshVotingStatus();
+        });
+
+        async function refreshVotingStatus() {
+            const banner = document.getElementById('votingStatusBanner');
+            const startBtn = document.getElementById('startVoteBtn');
+            try {
+                const res = await fetch(`${API_URL}/voting-status`);
+                const data = await res.json();
+                banner.classList.remove('hidden');
+                if (data.open) {
+                    banner.className = "p-4 rounded-xl border text-sm bg-emerald-500/10 border-emerald-500/30 text-emerald-300";
+                    banner.innerHTML = `<i class="fa-solid fa-lock-open mr-2"></i>Le vote est actuellement ouvert.`;
+                    startBtn.disabled = false;
+                    startBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    banner.className = "p-4 rounded-xl border text-sm bg-amber-500/10 border-amber-500/30 text-amber-300";
+                    banner.innerHTML = `<i class="fa-solid fa-lock mr-2"></i>${data.message}`;
+                    startBtn.disabled = true;
+                    startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            } catch (err) {
+                banner.classList.add('hidden');
+            }
+        }
+
+        function switchTab(tab) {
+            ['voter', 'feed', 'results'].forEach(t => {
+                document.getElementById(`sec-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).className = "px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 transition-all";
+            });
+
+            document.getElementById(`sec-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).className = "px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white transition-all";
+
+            if (tab === 'feed') loadComments();
+            if (tab === 'results') loadPublicResults();
+            if (tab === 'voter') refreshVotingStatus();
+        }
+
+        async function checkAndStartSession() {
+            const matriculeField = document.getElementById('voterMatricule');
+            const matriculeInput = matriculeField.value.trim();
+            const errorAlert = document.getElementById('idErrorAlert');
+            errorAlert.classList.add('hidden');
+
+            if (!matriculeInput) {
+                errorAlert.innerText = "Veuillez remplir le champ matricule.";
+                errorAlert.classList.remove('hidden');
+                return;
+            }
+
+            // Validation stricte côté client : MAT + 5 chiffres, MAJUSCULES uniquement (aucune conversion automatique)
+            if (!MATRICULE_REGEX.test(matriculeInput)) {
+                errorAlert.innerText = "Format invalide. Le matricule doit commencer par MAT suivi de 5 chiffres, en MAJUSCULES (ex : MAT12345). Les minuscules ne sont pas acceptées.";
+                errorAlert.classList.remove('hidden');
+                // On efface immédiatement le champ pour ne rien laisser affiché à l'écran
+                matriculeField.value = "";
+                return;
+            }
+
+            let res, data;
+            try {
+                res = await fetch(`${API_URL}/check-voter`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ voter_id: matriculeInput })
+                });
+                data = await res.json();
+            } catch (err) {
+                errorAlert.innerText = "Erreur réseau. Réessayez.";
+                errorAlert.classList.remove('hidden');
+                return;
+            }
+
+            // Le champ est vidé dès la réponse du serveur : le matricule ne doit jamais rester affiché
+            // pour l'électeur suivant, réussite ou échec confondus.
+            matriculeField.value = "";
+
+            if (!res.ok) {
+                errorAlert.innerText = data.detail || "Le vote n'est pas accessible actuellement.";
+                errorAlert.classList.remove('hidden');
+                await refreshVotingStatus();
+                return;
+            }
+
+            if (!data.allowed) {
+                if (data.attempts >= 3) {
+                    triggerFraudAlarm(matriculeInput);
+                } else {
+                    errorAlert.innerText = `Accès refusé : Ce matricule a déjà voté ! (Tentative suspecte ${data.attempts}/3)`;
+                    errorAlert.classList.remove('hidden');
+                }
+                return;
+            }
+
+            // Si tout est valide
+            currentVoterId = matriculeInput;
+            voterChoices = [];
+            currentStepIndex = 0;
+
+            document.getElementById('step-id').classList.add('hidden');
+            document.getElementById('step-voting').classList.remove('hidden');
+            renderRoleStep();
+        }
+
+        // Système d'Alarme Vocale & Blocage pendant 60 Secondes
+        function triggerFraudAlarm(matricule) {
+            const alarmOverlay = document.getElementById('alarmOverlay');
+            document.getElementById('alarmMatricule').innerText = matricule;
+            alarmOverlay.classList.remove('hidden');
+            alarmOverlay.classList.add('flex');
+
+            const spelledMatricule = matricule.split('').join(' ');
+            const alertText = `Alerte Alerte Alerte ! Tentative de tricherie pour le matricule : ${spelledMatricule}. Son vote pourra être annulé !`;
+
+            let speechLoopCount = 0;
+            const speakAlarm = () => {
+                if ('speechSynthesis' in window && speechLoopCount < 3) {
+                    const utterance = new SpeechSynthesisUtterance(alertText);
+                    utterance.lang = 'fr-FR';
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.1;
+                    utterance.onend = () => {
+                        speechLoopCount++;
+                        if (speechLoopCount < 3) speakAlarm();
+                    };
+                    window.speechSynthesis.speak(utterance);
+                }
+            };
+            speakAlarm();
+
+            let timeLeft = 60;
+            const timerElement = document.getElementById('lockTimer');
+            const interval = setInterval(() => {
+                timeLeft--;
+                timerElement.innerText = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    window.speechSynthesis.cancel();
+                    alarmOverlay.classList.add('hidden');
+                    alarmOverlay.classList.remove('flex');
+                    document.getElementById('alarmMatricule').innerText = "---";
+                    document.getElementById('voterMatricule').value = "";
+                }
+            }, 1000);
+        }
+
+        function renderRoleStep() {
+            const currentRole = rolesOrder[currentStepIndex];
+            document.getElementById('roleBadge').innerText = roleLabels[currentRole];
+            document.getElementById('stepCounter').innerText = `Étape ${currentStepIndex + 1} sur 3`;
+
+            if (currentStepIndex === 2) {
+                document.getElementById('btnNextText').innerText = "Finaliser et Terminer le Vote";
+            } else {
+                const nextRole = rolesOrder[currentStepIndex + 1];
+                document.getElementById('btnNextText').innerText = `Valider et Passer au ${nextRole}`;
+            }
+
+            document.getElementById('roleComment').value = "";
+            const candidates = allCandidates[currentRole] || [];
+            const container = document.getElementById('candidatesContainer');
+
+            if (candidates.length === 0) {
+                container.innerHTML = `<p class="col-span-2 text-center text-slate-500 text-sm py-6">Aucun candidat enregistré pour ce poste pour le moment.</p>`;
+                return;
+            }
+
+            container.innerHTML = candidates.map(c => `
+                <label class="relative flex items-center p-4 bg-slate-950 border border-slate-800 rounded-xl cursor-pointer hover:border-indigo-500 transition-all group">
+                    <input type="radio" name="candidateChoice" value="${c.id}" class="text-indigo-600 focus:ring-indigo-500">
+                    <img src="${c.photo}" class="w-14 h-14 rounded-full object-cover ml-3 mr-4 border border-slate-700">
+                    <div>
+                        <span class="block font-bold text-slate-200 text-sm group-hover:text-indigo-400">${c.name}</span>
+                        <span class="text-xs text-slate-500">Candidat au poste de ${currentRole}</span>
+                    </div>
+                </label>
+            `).join('');
+        }
+
+        async function nextRoleStep() {
+            const selectedRadio = document.querySelector('input[name="candidateChoice"]:checked');
+            if (!selectedRadio) {
+                alert("Veuillez sélectionner un candidat.");
+                return;
+            }
+
+            voterChoices.push({
+                role: rolesOrder[currentStepIndex],
+                candidate_id: parseInt(selectedRadio.value),
+                comment: document.getElementById('roleComment').value
+            });
+
+            if (currentStepIndex < 2) {
+                currentStepIndex++;
+                renderRoleStep();
+            } else {
+                await submitFinalBallot();
+            }
+        }
+
+        async function submitFinalBallot() {
+            try {
+                const res = await fetch(`${API_URL}/vote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        voter_id: currentVoterId,
+                        choices: voterChoices
+                    })
+                });
+
+                currentVoterId = ""; // le matricule ne reste jamais en mémoire côté client une fois utilisé
+
+                if (res.ok) {
+                    document.getElementById('step-voting').classList.add('hidden');
+                    document.getElementById('step-thanks').classList.remove('hidden');
+                    setTimeout(() => { resetToHome(); }, 4000);
+                } else {
+                    const data = await res.json();
+                    alert(data.detail || "Erreur lors de l'enregistrement.");
+                    resetToHome();
+                }
+            } catch (err) {
+                alert("Erreur réseau.");
+            }
+        }
+
+        function resetToHome() {
+            document.getElementById('voterMatricule').value = "";
+            document.getElementById('idErrorAlert').classList.add('hidden');
+            document.getElementById('step-thanks').classList.add('hidden');
+            document.getElementById('step-voting').classList.add('hidden');
+            document.getElementById('step-id').classList.remove('hidden');
+            currentVoterId = "";
+            voterChoices = [];
+            currentStepIndex = 0;
+            refreshVotingStatus();
+        }
+
+        async function loadComments() {
+            const res = await fetch(`${API_URL}/comments`);
+            const comments = await res.json();
+            const list = document.getElementById('commentsList');
+
+            if (comments.length === 0) {
+                list.innerHTML = `<p class="text-slate-500 text-center py-6 text-xs">Aucun avis rédigé.</p>`;
+                return;
+            }
+
+            list.innerHTML = comments.map(c => `
+                <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
+                    <span class="text-xs font-semibold text-indigo-400">[Poste ${c.role}] Pour : ${c.candidate_name}</span>
+                    <p class="text-xs text-slate-300">« ${c.comment} »</p>
+                </div>
+            `).join('');
+        }
+
+        function toggleOthers(id) {
+            const el = document.getElementById(id);
+            const btn = document.getElementById(`btn-${id}`);
+            const icon = btn.querySelector('i');
+            const isHidden = el.classList.contains('hidden');
+            el.classList.toggle('hidden');
+            icon.className = isHidden ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down';
+            btn.lastChild.textContent = isHidden ? ' Masquer les autres candidats' : ` Voir les autres candidats (${el.children.length})`;
+        }
+
+        async function loadPublicResults() {
+            const content = document.getElementById('publicResultsContent');
+            content.innerHTML = `<p class="text-slate-500 text-xs">Chargement...</p>`;
+            try {
+                const res = await fetch(`${API_URL}/results`);
+                if (!res.ok) {
+                    const data = await res.json();
+                    content.innerHTML = `<div class="p-4 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm rounded-xl"><i class="fa-solid fa-clock mr-2"></i>${data.detail}</div>`;
+                    return;
+                }
+                const data = await res.json();
+                let html = `<div class="mb-4 p-4 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
+                    <span class="text-xs text-slate-400">Nombre total de votants :</span>
+                    <span class="text-xl font-bold text-indigo-400">${data.total_voters}</span>
+                </div><div class="space-y-6">`;
+
+                Object.entries(data.roles_summary).forEach(([role, info]) => {
+                    html += `<div class="bg-slate-950 p-5 rounded-xl border border-slate-800">
+                        <h4 class="text-sm font-bold text-indigo-400 mb-4 border-b border-slate-800 pb-2">${info.label}</h4>`;
+
+                    const cands = info.candidates || [];
+                    if (cands.length === 0 || info.total_role_votes === 0) {
+                        html += `<p class="text-xs text-slate-500 py-4 text-center">Aucun vote enregistré pour ce poste pour le moment.</p></div>`;
+                        return;
+                    }
+
+                    const topVotes = cands[0].votes;
+                    const winners = cands.filter(c => c.votes === topVotes);
+                    const others = cands.filter(c => c.votes !== topVotes);
+                    const isTie = winners.length > 1;
+
+                    winners.forEach(w => {
+                        html += `<div class="flex items-center gap-4 mb-4">
+                            <img src="${w.photo}" class="w-24 h-24 rounded-full object-cover border-4 border-amber-400 shadow-lg shadow-amber-500/20">
+                            <div>
+                                <span class="inline-block px-2 py-0.5 mb-1 text-[10px] font-bold uppercase tracking-wide rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                    ${isTie ? "Ex æquo en tête" : "Vainqueur"}
+                                </span>
+                                <p class="text-lg font-bold text-white">${w.name}</p>
+                                <p class="text-sm text-amber-400 font-semibold">${w.percentage}% — ${w.votes} voix</p>
+                            </div>
+                        </div>`;
+                    });
+
+                    if (others.length > 0) {
+                        const safeId = `others-${role}`;
+                        html += `<button onclick="toggleOthers('${safeId}')" id="btn-${safeId}" class="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 mt-1 mb-2">
+                            <i class="fa-solid fa-chevron-down"></i> Voir les autres candidats (${others.length})
+                        </button>
+                        <div id="${safeId}" class="hidden space-y-3 pt-2 border-t border-slate-800">`;
+                        others.forEach(c => {
+                            html += `<div class="flex items-center gap-3">
+                                <img src="${c.photo}" class="w-10 h-10 rounded-full object-cover border border-slate-700">
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-center text-xs mb-1">
+                                        <span class="text-slate-300">${c.name}</span>
+                                        <span class="text-slate-400 font-medium">${c.votes} vote(s) — ${c.percentage}%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+                                        <div class="bg-slate-600 h-2 rounded-full" style="width: ${c.percentage}%"></div>
+                                    </div>
+                                </div>
+                            </div>`;
+                        });
+                        html += `</div>`;
+                    }
+
+                    html += `</div>`;
+                });
+                html += `</div>`;
+                content.innerHTML = html;
+            } catch (err) {
+                content.innerHTML = `<p class="text-rose-400 text-xs">Erreur de chargement des résultats.</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

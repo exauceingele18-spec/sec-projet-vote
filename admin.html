@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration — Élection du Bureau de Promotion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="min-h-screen flex flex-col justify-between font-sans">
+
+    <!-- Navbar -->
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl">
+                    <i class="fa-solid fa-shield-halved text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-white">Bureau Électoral — Administration</h1>
+                    <p class="text-xs text-slate-400">Groupe 28 — Accès restreint</p>
+                </div>
+            </div>
+
+            <nav id="adminNav" class="hidden flex flex-wrap bg-slate-950 p-1 rounded-xl border border-slate-800">
+                <button onclick="switchTab('results')" id="tab-results" class="px-4 py-2 text-sm font-medium rounded-lg bg-amber-500 text-slate-950 font-bold transition-all">
+                    <i class="fa-solid fa-chart-pie mr-2"></i>Résultats
+                </button>
+                <button onclick="switchTab('candidates')" id="tab-candidates" class="px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+                    <i class="fa-solid fa-user-group mr-2"></i>Candidats
+                </button>
+                <button onclick="switchTab('voters')" id="tab-voters" class="px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+                    <i class="fa-solid fa-address-card mr-2"></i>Électeurs autorisés
+                </button>
+                <button onclick="switchTab('fraud')" id="tab-fraud" class="px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+                    <i class="fa-solid fa-triangle-exclamation mr-2"></i>Journal de fraude
+                </button>
+                <button onclick="switchTab('receipts')" id="tab-receipts" class="px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+                    <i class="fa-solid fa-receipt mr-2"></i>Reçus
+                </button>
+                <button onclick="switchTab('schedule')" id="tab-schedule" class="px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+                    <i class="fa-solid fa-clock mr-2"></i>Horaires
+                </button>
+            </nav>
+            <button id="logoutBtn" onclick="logout()" class="hidden px-3 py-2 text-xs text-slate-400 hover:text-rose-400 border border-slate-800 rounded-lg transition-all">
+                <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Déconnexion
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-5xl w-full mx-auto p-4 my-6 flex-1">
+
+        <!-- Écran de connexion -->
+        <section id="sec-login" class="max-w-md mx-auto mt-10">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center space-y-4">
+                <div class="p-3 bg-amber-500/10 text-amber-400 rounded-full w-16 h-16 flex items-center justify-center mx-auto border border-amber-500/20">
+                    <i class="fa-solid fa-key text-2xl"></i>
+                </div>
+                <h2 class="text-xl font-bold text-white">Connexion Administrateur</h2>
+                <p class="text-xs text-slate-400">Saisissez le jeton d'accès administrateur.</p>
+                <div id="loginError" class="hidden p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs rounded-xl"></div>
+                <input type="password" id="adminTokenInput" placeholder="Jeton administrateur" autocomplete="off"
+                    class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-amber-500 text-center text-slate-100 font-mono outline-none">
+                <button onclick="login()" class="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg transition-all">
+                    Se connecter
+                </button>
+            </div>
+        </section>
+
+        <!-- Espace admin (masqué tant que non connecté) -->
+        <section id="sec-admin-app" class="hidden space-y-6">
+
+            <!-- Résultats -->
+            <div id="panel-results" class="space-y-6">
+                <div class="bg-slate-900 border border-amber-500/30 rounded-2xl p-6">
+                    <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
+                        <div>
+                            <h2 class="text-xl font-semibold text-amber-400 flex items-center gap-2">
+                                <i class="fa-solid fa-chart-pie"></i> Résultats en Temps Réel
+                            </h2>
+                            <p class="text-xs text-slate-400">Décompte par poste et pourcentages calculés.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="loadResults()" class="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-lg text-xs transition-all flex items-center gap-2">
+                                <i class="fa-solid fa-rotate"></i> Actualiser
+                            </button>
+                            <button id="publishToggleBtn" onclick="togglePublish()" class="px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2">
+                                <i class="fa-solid fa-bullhorn"></i> <span id="publishToggleLabel">...</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-6 p-4 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Nombre total de votants enregistrés :</span>
+                        <span id="adminTotalVoters" class="text-xl font-bold text-amber-400">0</span>
+                    </div>
+
+                    <div id="adminRolesSummary" class="space-y-6"></div>
+                </div>
+            </div>
+
+            <!-- Candidats -->
+            <div id="panel-candidates" class="hidden space-y-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                    <h2 class="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus text-indigo-400"></i> Ajouter un candidat
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-start">
+                        <select id="newCandRole" class="px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500">
+                            <option value="CP">CP</option>
+                            <option value="CPA">CPA</option>
+                            <option value="SECRETAIRE">Secrétaire</option>
+                        </select>
+                        <input id="newCandName" type="text" placeholder="Nom complet du candidat" class="px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500 md:col-span-2">
+                        <div>
+                            <label for="newCandPhotoFile" class="flex items-center gap-3 px-3 py-2 bg-slate-950 border border-dashed border-slate-700 rounded-lg text-xs text-slate-400 hover:border-indigo-500 hover:text-indigo-400 cursor-pointer transition-all">
+                                <i class="fa-solid fa-camera"></i>
+                                <span id="photoFileLabel">Choisir une photo</span>
+                            </label>
+                            <input id="newCandPhotoFile" type="file" accept="image/*" class="hidden" onchange="handlePhotoSelect(event)">
+                        </div>
+                    </div>
+                    <div id="photoPreviewWrap" class="hidden mt-3 flex items-center gap-3">
+                        <img id="photoPreviewImg" class="w-16 h-16 rounded-full object-cover border border-slate-700">
+                        <button onclick="clearPhotoSelection()" class="text-xs text-rose-400 hover:underline"><i class="fa-solid fa-xmark mr-1"></i>Retirer la photo</button>
+                    </div>
+                    <button onclick="addCandidate()" class="mt-3 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-all">
+                        <i class="fa-solid fa-plus mr-2"></i>Enregistrer le candidat
+                    </button>
+                </div>
+
+                <div id="candidatesManageList" class="space-y-4"></div>
+            </div>
+
+            <!-- Électeurs autorisés -->
+            <div id="panel-voters" class="hidden space-y-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                    <h2 class="text-xl font-semibold text-white mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-address-card text-indigo-400"></i> Registre des électeurs autorisés
+                    </h2>
+                    <p class="text-xs text-slate-400 mb-4">
+                        Seuls les matricules présents dans ce registre peuvent voter. Il représente la liste des étudiants
+                        en règle avec leurs frais académiques, fournie par la faculté — à coller ci-dessous
+                        (un matricule par ligne, ou séparés par virgule/espace).
+                    </p>
+                    <textarea id="votersImportText" rows="5" placeholder="MAT10001&#10;MAT10002&#10;MAT10003"
+                        class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm font-mono text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500"></textarea>
+                    <div id="votersImportResult" class="hidden mt-2 text-xs"></div>
+                    <button onclick="importAuthorizedVoters()" class="mt-3 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-all">
+                        <i class="fa-solid fa-file-import mr-2"></i>Importer dans le registre
+                    </button>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold text-indigo-400">
+                            <span id="votersCount">0</span> électeur(s) autorisé(s)
+                        </h3>
+                        <button onclick="loadAuthorizedVoters()" class="px-3 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-lg text-xs transition-all">
+                            <i class="fa-solid fa-rotate mr-1"></i> Actualiser
+                        </button>
+                    </div>
+                    <div id="votersList" class="flex flex-wrap gap-2 font-mono text-xs"></div>
+                </div>
+            </div>
+
+            <!-- Journal de fraude -->
+            <div id="panel-fraud" class="hidden space-y-6">
+                <div class="bg-slate-900 border border-rose-500/30 rounded-2xl p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-rose-400 flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Journal de Fraude
+                        </h2>
+                        <div class="flex gap-2">
+                            <button onclick="exportCsv('fraud-log', 'journal_fraude.csv')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-xs transition-all">
+                                <i class="fa-solid fa-file-csv mr-1"></i> Export CSV
+                            </button>
+                            <button onclick="loadFraudLog()" class="px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg text-xs transition-all">
+                                <i class="fa-solid fa-rotate mr-1"></i> Actualiser
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">Chaque tentative d'un matricule ayant déjà voté est journalisée ici pour détecter les fraudes.</p>
+                    <div id="fraudLogList" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- Reçus -->
+            <div id="panel-receipts" class="hidden space-y-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-receipt text-indigo-400"></i> Reçus de Vote (Anonymisés)
+                        </h2>
+                        <div class="flex gap-2">
+                            <button onclick="exportCsv('receipts', 'recus_vote.csv')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-xs transition-all">
+                                <i class="fa-solid fa-file-csv mr-1"></i> Export CSV
+                            </button>
+                            <button onclick="loadReceipts()" class="px-3 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-lg text-xs transition-all">
+                                <i class="fa-solid fa-rotate mr-1"></i> Actualiser
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">Le matricule est haché (SHA-256) : impossible de relier un reçu à une identité, mais chaque électeur peut vérifier que son vote a bien été déposé.</p>
+                    <div id="receiptsList" class="space-y-2 font-mono text-xs"></div>
+                </div>
+            </div>
+
+            <!-- Horaires -->
+            <div id="panel-schedule" class="hidden space-y-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg">
+                    <h2 class="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-clock text-indigo-400"></i> Ouverture / Fermeture du Vote
+                    </h2>
+                    <div id="scheduleError" class="hidden p-3 mb-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs rounded-xl"></div>
+                    <div id="scheduleSuccess" class="hidden p-3 mb-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs rounded-xl"></div>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Ouverture</label>
+                            <input id="scheduleOpen" type="datetime-local" class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Fermeture</label>
+                            <input id="scheduleClose" type="datetime-local" class="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm text-slate-200 outline-none focus:ring-1 focus:ring-indigo-500">
+                        </div>
+                    </div>
+                    <button onclick="saveSchedule()" class="mt-4 w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-xl transition-all">
+                        <i class="fa-solid fa-floppy-disk mr-2"></i>Enregistrer les horaires
+                    </button>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <footer class="border-t border-slate-800 bg-slate-900 py-4 text-center text-xs text-slate-500">
+        Plateforme d'Élection du Bureau de Promotion — UNIKIN | Groupe 28 — Administration
+    </footer>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000/api";
+        let adminToken = "";
+        const roleNames = { "CP": "Chef de Promotion", "CPA": "Chef de Promotion Adjoint", "SECRETAIRE": "Secrétaire de Promotion" };
+        let resultsPublished = false;
+
+        function authHeaders() {
+            return { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken };
+        }
+
+        async function login() {
+            const tokenInput = document.getElementById('adminTokenInput').value.trim();
+            const errorBox = document.getElementById('loginError');
+            errorBox.classList.add('hidden');
+            if (!tokenInput) return;
+
+            adminToken = tokenInput;
+            const res = await fetch(`${API_URL}/admin/dashboard`, { headers: { 'X-Admin-Token': adminToken } });
+            if (!res.ok) {
+                adminToken = "";
+                errorBox.innerText = "Jeton invalide.";
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            sessionStorage.setItem('adminToken', adminToken);
+            document.getElementById('sec-login').classList.add('hidden');
+            document.getElementById('sec-admin-app').classList.remove('hidden');
+            document.getElementById('adminNav').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+            switchTab('results');
+        }
+
+        function logout() {
+            adminToken = "";
+            sessionStorage.removeItem('adminToken');
+            document.getElementById('sec-login').classList.remove('hidden');
+            document.getElementById('sec-admin-app').classList.add('hidden');
+            document.getElementById('adminNav').classList.add('hidden');
+            document.getElementById('logoutBtn').classList.add('hidden');
+            document.getElementById('adminTokenInput').value = "";
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = sessionStorage.getItem('adminToken');
+            if (saved) {
+                adminToken = saved;
+                document.getElementById('sec-login').classList.add('hidden');
+                document.getElementById('sec-admin-app').classList.remove('hidden');
+                document.getElementById('adminNav').classList.remove('hidden');
+                document.getElementById('logoutBtn').classList.remove('hidden');
+                switchTab('results');
+            }
+        });
+
+        function switchTab(tab) {
+            ['results', 'candidates', 'voters', 'fraud', 'receipts', 'schedule'].forEach(t => {
+                document.getElementById(`panel-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).className = "px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:text-slate-200 transition-all";
+            });
+            document.getElementById(`panel-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).className = "px-4 py-2 text-sm font-medium rounded-lg bg-amber-500 text-slate-950 font-bold transition-all";
+
+            if (tab === 'results') loadResults();
+            if (tab === 'candidates') loadCandidatesManage();
+            if (tab === 'voters') loadAuthorizedVoters();
+            if (tab === 'fraud') loadFraudLog();
+            if (tab === 'receipts') loadReceipts();
+            if (tab === 'schedule') loadSchedule();
+        }
+
+        async function loadAuthorizedVoters() {
+            const res = await fetch(`${API_URL}/admin/authorized-voters`, { headers: authHeaders() });
+            if (!res.ok) { logout(); return; }
+            const data = await res.json();
+            document.getElementById('votersCount').innerText = data.count;
+            const list = document.getElementById('votersList');
+            if (data.matricules.length === 0) {
+                list.innerHTML = `<p class="text-slate-500 text-xs font-sans">Registre vide — aucun électeur ne peut encore voter.</p>`;
+                return;
+            }
+            list.innerHTML = data.matricules.map(m => `
+                <span class="inline-flex items-center gap-2 px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-300">
+                    ${m}
+                    <button onclick="removeAuthorizedVoter('${m}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-xmark"></i></button>
+                </span>
+            `).join('');
+        }
+
+        async function importAuthorizedVoters() {
+            const text = document.getElementById('votersImportText').value;
+            const resultBox = document.getElementById('votersImportResult');
+            if (!text.trim()) return;
+
+            const res = await fetch(`${API_URL}/admin/authorized-voters`, {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({ matricules: text })
+            });
+            const data = await res.json();
+            resultBox.classList.remove('hidden');
+            if (res.ok) {
+                let msg = `<span class="text-emerald-400">${data.added} matricule(s) ajouté(s).</span>`;
+                if (data.rejected.length > 0) {
+                    msg += ` <span class="text-rose-400">${data.rejected.length} rejeté(s) (format invalide) : ${data.rejected.join(', ')}</span>`;
+                }
+                resultBox.innerHTML = msg;
+                document.getElementById('votersImportText').value = "";
+                loadAuthorizedVoters();
+            } else {
+                resultBox.innerHTML = `<span class="text-rose-400">${data.detail || "Erreur lors de l'import."}</span>`;
+            }
+        }
+
+        async function removeAuthorizedVoter(matricule) {
+            const res = await fetch(`${API_URL}/admin/authorized-voters/${matricule}`, {
+                method: 'DELETE',
+                headers: authHeaders()
+            });
+            if (res.ok) loadAuthorizedVoters();
+        }
+
+        async function loadResults() {
+            const res = await fetch(`${API_URL}/admin/dashboard`, { headers: authHeaders() });
+            if (!res.ok) { logout(); return; }
+            const data = await res.json();
+
+            document.getElementById('adminTotalVoters').innerText = data.total_voters;
+            const container = document.getElementById('adminRolesSummary');
+            container.innerHTML = '';
+
+            Object.entries(data.roles_summary).forEach(([role, info]) => {
+                let html = `<div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <h4 class="text-sm font-bold text-indigo-400 mb-3 border-b border-slate-800 pb-2">
+                        Poste de : ${info.label} (${info.total_role_votes} voix)
+                    </h4>
+                    <div class="space-y-3">`;
+                info.candidates.forEach(c => {
+                    html += `<div>
+                        <div class="flex justify-between items-center text-xs mb-1">
+                            <span class="text-slate-200 font-medium">${c.name}</span>
+                            <span class="text-amber-400 font-bold">${c.votes} vote(s) — ${c.percentage}%</span>
+                        </div>
+                        <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-800">
+                            <div class="bg-amber-500 h-2.5 rounded-full transition-all duration-500" style="width: ${c.percentage}%"></div>
+                        </div>
+                    </div>`;
+                });
+                html += `</div></div>`;
+                container.innerHTML += html;
+            });
+
+            // Statut de publication
+            const scheduleRes = await fetch(`${API_URL}/admin/schedule`, { headers: authHeaders() });
+            if (scheduleRes.ok) {
+                const sched = await scheduleRes.json();
+                resultsPublished = !!sched.results_published;
+                updatePublishButton();
+            }
+        }
+
+        function updatePublishButton() {
+            const btn = document.getElementById('publishToggleBtn');
+            const label = document.getElementById('publishToggleLabel');
+            if (resultsPublished) {
+                btn.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
+                label.innerText = "Résultats publiés — Dépublier";
+            } else {
+                btn.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 bg-slate-800 text-slate-300 border border-slate-700";
+                label.innerText = "Publier les résultats";
+            }
+        }
+
+        async function togglePublish() {
+            const res = await fetch(`${API_URL}/admin/publish-results`, {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({ published: !resultsPublished })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                resultsPublished = !!data.results_published;
+                updatePublishButton();
+            }
+        }
+
+        async function loadCandidatesManage() {
+            const res = await fetch(`${API_URL}/candidates`);
+            const data = await res.json();
+            const container = document.getElementById('candidatesManageList');
+            container.innerHTML = '';
+
+            Object.entries(roleNames).forEach(([role, label]) => {
+                const cands = data[role] || [];
+                let html = `<div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                    <h3 class="text-sm font-bold text-indigo-400 mb-3">${label}</h3>`;
+                if (cands.length === 0) {
+                    html += `<p class="text-xs text-slate-500">Aucun candidat enregistré.</p>`;
+                } else {
+                    html += `<div class="space-y-2">`;
+                    cands.forEach(c => {
+                        html += `<div class="flex items-center justify-between p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                            <div class="flex items-center gap-3">
+                                <img src="${c.photo}" class="w-10 h-10 rounded-full object-cover border border-slate-700">
+                                <span class="text-sm text-slate-200">${c.name}</span>
+                            </div>
+                            <button onclick="deleteCandidate('${role}', ${c.id})" class="px-3 py-1.5 text-xs text-rose-400 hover:bg-rose-500/10 border border-rose-500/30 rounded-lg transition-all">
+                                <i class="fa-solid fa-trash mr-1"></i>Retirer
+                            </button>
+                        </div>`;
+                    });
+                    html += `</div>`;
+                }
+                html += `</div>`;
+                container.innerHTML += html;
+            });
+        }
+
+        // Photo du candidat : lue en local et convertie en base64 (data URI),
+        // puis envoyée telle quelle dans le champ "photo" — aucun serveur de
+        // fichiers séparé n'est nécessaire, l'API accepte une chaîne quelconque.
+        let selectedPhotoDataUrl = "";
+        const MAX_PHOTO_BYTES = 700 * 1024; // ~700 Ko avant encodage, marge raisonnable
+
+        function handlePhotoSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                alert("Veuillez sélectionner un fichier image.");
+                event.target.value = "";
+                return;
+            }
+            if (file.size > MAX_PHOTO_BYTES) {
+                alert("Photo trop volumineuse (700 Ko maximum). Choisissez une image plus légère.");
+                event.target.value = "";
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                selectedPhotoDataUrl = reader.result;
+                document.getElementById('photoPreviewImg').src = selectedPhotoDataUrl;
+                document.getElementById('photoPreviewWrap').classList.remove('hidden');
+                document.getElementById('photoFileLabel').innerText = file.name;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearPhotoSelection() {
+            selectedPhotoDataUrl = "";
+            document.getElementById('newCandPhotoFile').value = "";
+            document.getElementById('photoPreviewWrap').classList.add('hidden');
+            document.getElementById('photoFileLabel').innerText = "Choisir une photo";
+        }
+
+        async function addCandidate() {
+            const role = document.getElementById('newCandRole').value;
+            const name = document.getElementById('newCandName').value.trim();
+
+            if (!name) { alert("Le nom du candidat est requis."); return; }
+
+            const res = await fetch(`${API_URL}/admin/candidates`, {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({ role, name, photo: selectedPhotoDataUrl || null })
+            });
+
+            if (res.ok) {
+                document.getElementById('newCandName').value = "";
+                clearPhotoSelection();
+                loadCandidatesManage();
+            } else {
+                const data = await res.json();
+                alert(data.detail || "Erreur lors de l'ajout du candidat.");
+            }
+        }
+
+        async function deleteCandidate(role, candidateId) {
+            if (!confirm("Retirer ce candidat de la liste ?")) return;
+            const res = await fetch(`${API_URL}/admin/candidates/${role}/${candidateId}`, {
+                method: 'DELETE',
+                headers: authHeaders()
+            });
+            if (res.ok) loadCandidatesManage();
+        }
+
+        async function exportCsv(endpoint, filename) {
+            const res = await fetch(`${API_URL}/admin/${endpoint}/export`, { headers: authHeaders() });
+            if (!res.ok) { alert("Erreur lors de l'export."); return; }
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        async function loadFraudLog() {
+            const res = await fetch(`${API_URL}/admin/fraud-log`, { headers: authHeaders() });
+            if (!res.ok) { logout(); return; }
+            const data = await res.json();
+            const list = document.getElementById('fraudLogList');
+
+            if (data.length === 0) {
+                list.innerHTML = `<p class="text-slate-500 text-center py-6 text-xs">Aucune tentative suspecte enregistrée.</p>`;
+                return;
+            }
+
+            list.innerHTML = data.map(entry => `
+                <div class="flex items-center justify-between p-3 bg-slate-950 border border-rose-500/20 rounded-xl">
+                    <div>
+                        <span class="font-mono text-sm text-amber-400">${entry.matricule}</span>
+                        <span class="text-xs text-slate-500 ml-2">${new Date(entry.horodatage).toLocaleString('fr-FR')}</span>
+                    </div>
+                    <span class="text-xs px-2 py-1 rounded-full ${entry.tentative >= 3 ? 'bg-rose-500/20 text-rose-300' : 'bg-amber-500/20 text-amber-300'}">
+                        Tentative ${entry.tentative}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        async function loadReceipts() {
+            const res = await fetch(`${API_URL}/admin/receipts`, { headers: authHeaders() });
+            if (!res.ok) { logout(); return; }
+            const data = await res.json();
+            const list = document.getElementById('receiptsList');
+
+            if (data.length === 0) {
+                list.innerHTML = `<p class="text-slate-500 text-center py-6 text-xs font-sans">Aucun reçu pour le moment.</p>`;
+                return;
+            }
+
+            list.innerHTML = data.map(r => `
+                <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                    <div class="flex justify-between text-slate-400"><span>Poste</span><span class="text-indigo-400">${r.role}</span></div>
+                    <div class="flex justify-between text-slate-400 mt-1"><span>Matricule (haché)</span><span class="truncate ml-2 text-slate-300">${r.matricule_hash.slice(0, 16)}…</span></div>
+                    <div class="flex justify-between text-slate-400 mt-1"><span>Reçu</span><span class="truncate ml-2 text-slate-300">${r.receipt_hash.slice(0, 16)}…</span></div>
+                </div>
+            `).join('');
+        }
+
+        async function loadSchedule() {
+            const res = await fetch(`${API_URL}/admin/schedule`, { headers: authHeaders() });
+            if (!res.ok) { logout(); return; }
+            const data = await res.json();
+            document.getElementById('scheduleOpen').value = data.open_time ? data.open_time.slice(0, 16) : "";
+            document.getElementById('scheduleClose').value = data.close_time ? data.close_time.slice(0, 16) : "";
+        }
+
+        async function saveSchedule() {
+            const openVal = document.getElementById('scheduleOpen').value;
+            const closeVal = document.getElementById('scheduleClose').value;
+            const errBox = document.getElementById('scheduleError');
+            const okBox = document.getElementById('scheduleSuccess');
+            errBox.classList.add('hidden');
+            okBox.classList.add('hidden');
+
+            if (!openVal || !closeVal) {
+                errBox.innerText = "Veuillez renseigner les deux dates.";
+                errBox.classList.remove('hidden');
+                return;
+            }
+
+            const res = await fetch(`${API_URL}/admin/schedule`, {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({ open_time: openVal, close_time: closeVal })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                okBox.innerText = "Horaires enregistrés avec succès.";
+                okBox.classList.remove('hidden');
+            } else {
+                errBox.innerText = data.detail || "Erreur lors de l'enregistrement.";
+                errBox.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
