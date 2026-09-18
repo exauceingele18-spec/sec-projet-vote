@@ -1,6 +1,7 @@
 # Plateforme de Vote Électronique Sécurisé — Groupe 28
 
-Projet académique — Cours *Protocoles de Sécurité Réseau* (M1 MSI, UNIKIN)
+Projet académique 
+Cours *Protocoles de Sécurité Réseau* (M1 MSI, UNIKIN)
 Sujet : Développement d'une plateforme web de vote electronique garanstissant confidentialité, intégrité et vérifiabilité.
 
 Pour ce cas nous avons opter de pencher sur l'élection du Bureau de Promotion (Chef de Promotion,
@@ -51,6 +52,3 @@ Puis ouvrir :
   sur une base de données persistante pour un usage réel.
 - Aucun HTTPS n'est configuré ici : à activer en production.
 
-## Documentation
-Le rapport complet du projet et la présentation associée figurent dans ce dépôt
-(ou ont été transmis séparément selon les consignes du cours).
