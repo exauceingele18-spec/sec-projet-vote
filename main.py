@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Optional, List
 
 from fastapi import FastAPI, HTTPException, Header, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, field_validator
 
@@ -17,7 +18,13 @@ app = FastAPI(
     title="Système de Vote de Promotion - Bureau CP/CPA/Secrétaire",
     description="Élection académique avec détection antifraude, anonymat des votes et administration dédiée."
 )
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 voting_system = CryptoVotingSystem()
 
 # ------------------------------------------------------------------
