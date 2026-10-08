@@ -248,19 +248,42 @@
         }
 
         async function login() {
-            const tokenInput = document.getElementById('adminTokenInput').value.trim();
-            const errorBox = document.getElementById('loginError');
-            errorBox.classList.add('hidden');
-            if (!tokenInput) return;
+    const tokenInput = document.getElementById('adminTokenInput').value.trim();
+    const errorBox = document.getElementById('loginError');
+    errorBox.classList.add('hidden');
 
-            adminToken = tokenInput;
-            const res = await fetch(`${API_URL}/admin/dashboard`, { headers: { 'X-Admin-Token': adminToken } });
-            if (!res.ok) {
-                adminToken = "";
-                errorBox.innerText = "Jeton invalide.";
-                errorBox.classList.remove('hidden');
-                return;
+    if (!tokenInput) return;
+
+    try {
+        const res = await fetch('/api/admin/dashboard', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Admin-Token': tokenInput
             }
+        });
+
+        if (!res.ok) {
+            errorBox.innerText = "Jeton invalide ou accès refusé.";
+            errorBox.classList.remove('hidden');
+            return;
+        }
+
+        const data = await res.json();
+        
+        // Stockage du jeton et affichage du panneau d'administration
+        adminToken = tokenInput;
+        sessionStorage.setItem('adminToken', adminToken);
+        
+        document.getElementById('sec-login').classList.add('hidden');
+        document.getElementById('sec-admin-app').classList.remove('hidden');
+        document.getElementById('adminNav').classList.remove('hidden');
+
+    } catch (err) {
+        errorBox.innerText = "Erreur de connexion au serveur.";
+        errorBox.classList.remove('hidden');
+    }
+}
 
             sessionStorage.setItem('adminToken', adminToken);
             document.getElementById('sec-login').classList.add('hidden');
