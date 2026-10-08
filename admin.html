@@ -238,7 +238,7 @@
     </footer>
 
     <script>
-        const API_URL = "";
+        const API_URL = "https://sec-projet-vote-api.onrender.com";
         let adminToken = "";
         const roleNames = { "CP": "Chef de Promotion", "CPA": "Chef de Promotion Adjoint", "SECRETAIRE": "Secrétaire de Promotion" };
         let resultsPublished = false;
@@ -255,7 +255,7 @@
     if (!tokenInput) return;
 
     try {
-        const res = await fetch('/api/admin/dashboard', {
+        const res = await fetch('${API_URL}/api/admin/dashboard', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
