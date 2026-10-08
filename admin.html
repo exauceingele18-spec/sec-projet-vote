@@ -413,7 +413,7 @@
             });
 
             // Statut de publication
-            const scheduleRes = await fetch(`${API_URL}/admin/schedule`, { headers: authHeaders() });
+            const scheduleRes = await fetch(`${API_URL}/api/admin/schedule`, { headers: authHeaders() });
             if (scheduleRes.ok) {
                 const sched = await scheduleRes.json();
                 resultsPublished = !!sched.results_published;
