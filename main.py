@@ -113,7 +113,7 @@ def is_voting_open() -> tuple[bool, str]:
         close_dt = close_dt.replace(tzinfo=None)
 
     if now < open_dt:
-        return False, f"Le vote ouvre le {open_dt.strftime('%d/%m/%Y à %H/%M')}."
+        return False, f"Le vote ouvre le {open_dt.strftime('%d/%m/%Y à %H:%M')}."
     if now > close_dt:
         return False, "La période de vote est terminée."
     return True, ""
