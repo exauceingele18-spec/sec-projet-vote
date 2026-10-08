@@ -383,7 +383,7 @@
         }
 
         async function loadResults() {
-            const res = await fetch(`${API_URL}/admin/dashboard`, { headers: authHeaders() });
+            const res = await fetch(`${API_URL}api/admin/dashboard`, { headers: authHeaders() });
             if (!res.ok) { logout(); return; }
             const data = await res.json();
 
