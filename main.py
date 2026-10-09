@@ -21,15 +21,17 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 # ------------------------------------------------------------------
 # 1. Configuration de la base de données (PostgreSQL / SQLite)
 # ------------------------------------------------------------------
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./local_test.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Correction de la syntaxe de l'URL pour SQLAlchemy si elle vient de Render
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+if not DATABASE_URL:
+    DATABASE_URL = "sqlite:///./local_test.db"
+else:
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+# Si l'URL commence par postgres:// ou postgresql://, on force le pilote psycopg2
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif DATABASE_URL.startswith("postgresql://") and not DATABASE_URL.startswith("postgresql+psycopg2://"):
+        DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 
 app = FastAPI(
