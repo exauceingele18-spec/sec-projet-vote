@@ -562,7 +562,7 @@
         }
 
         async function loadFraudLog() {
-            const res = await fetch(`${API_URL}/admin/fraud-log`, { headers: authHeaders() });
+            const res = await fetch(`${API_URL}/api/admin/fraud-log`, { headers: authHeaders() });
             if (!res.ok) { logout(); return; }
             const data = await res.json();
             const list = document.getElementById('fraudLogList');
