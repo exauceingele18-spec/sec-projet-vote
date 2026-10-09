@@ -4,7 +4,7 @@ import io
 import itertools
 import re
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 
 from fastapi import FastAPI, HTTPException, Header, Request
@@ -105,19 +105,24 @@ VOTING_CONFIG = {
 # ------------------------------------------------------------------
 # Utilitaires
 # ------------------------------------------------------------------
+#Fuseau horaire de Kinshasa / Afrique Centrale (UTC+1)
+
+WAT = timezone(timedelta(hours=1))
+
 def is_voting_open() -> tuple[bool, str]:
     open_t = VOTING_CONFIG["open_time"]
     close_t = VOTING_CONFIG["close_time"]
     if not open_t or not close_t:
         return False, "La période de vote n'a pas encore été configurée par l'administrateur."
-
-    now = datetime.now()
+#Heure actuelle locale (UTC+1)
+    now = datetime.now(WAT)
+    
     open_dt = datetime.fromisoformat(open_t)
     close_dt = datetime.fromisoformat(close_t)
     if open_dt.tzinfo is None:
-        open_dt = open_dt.replace(tzinfo=None)
+        open_dt = open_dt.replace(tzinfo=WAT)
     if close_dt.tzinfo is None:
-        close_dt = close_dt.replace(tzinfo=None)
+        close_dt = close_dt.replace(tzinfo=WAT)
 
     if now < open_dt:
         return False, f"Le vote ouvre le {open_dt.strftime('%d/%m/%Y à %H:%M')}."
