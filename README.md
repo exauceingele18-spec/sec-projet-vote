@@ -24,16 +24,16 @@ des votes (cryptosystème de Paillier) et anonymisation des matricules (SHA-256)
 └── README.md
 ```
 
-## Installation et exécution en local
 
 ```bash
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-Puis ouvrir :
-- Interface votant : http://127.0.0.1:8000/
-- Interface administrateur : http://127.0.0.1:8000/admin
+## Liens de déploiement (Render)
+- Interface votant : https://sec-projet-vote-api.onrender.com/
+- Interface administrateur :https://sec-projet-vote-api.onrender.com/admin
+
 
 ## Fonctionnalités principales
 - Authentification par matricule (format strict `MAT` + 5 chiffres, majuscules)
@@ -45,10 +45,23 @@ Puis ouvrir :
 - Publication contrôlée des résultats
 - Export CSV du journal de fraude et des reçus (admin)
 
-## Sécurité — points à changer avant tout déploiement réel
-- Le jeton administrateur (`ADMIN_TOKEN` dans `main.py`) est une constante en clair :
-  à remplacer par une variable d'environnement.
-- Les données sont conservées en mémoire vive (perdues au redémarrage) : à brancher
-  sur une base de données persistante pour un usage réel.
-- Aucun HTTPS n'est configuré ici : à activer en production.
+## Architecture & Base de données
+
+Backend : FastAPI (Python 3)
+
+ORM : SQLAlchemy
+
+Database : PostgreSQL (hébergé sur Render) pour la persistance permanente des données
+
+Sécurité réseau : HTTPS activé automatiquement par Render
+
+## Configuration & Déploiement
+
+Les variables d'environnement suivantes sont utilisées en production :
+
+DATABASE_URL : Chaîne de connexion à la base de données PostgreSQL
+
+ADMIN_TOKEN : Jeton d'authentification pour l'interface administrateur
+
+
 
