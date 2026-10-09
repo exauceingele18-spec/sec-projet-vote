@@ -4,6 +4,7 @@ import io
 import itertools
 import re
 import time
+import os
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 
@@ -14,8 +15,25 @@ from pydantic import BaseModel, field_validator
 
 from crypto import CryptoVotingSystem
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+
+# ------------------------------------------------------------------
+# 1. Configuration de la base de données (PostgreSQL / SQLite)
+# ------------------------------------------------------------------
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./local_test.db")
+
+# Correction de la syntaxe de l'URL pour SQLAlchemy si elle vient de Render
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+
 app = FastAPI(
-    title="Système de Vote de Promotion - Bureau CP/CPA/Secrétaire",
+    title="Système de Vote Sécurisé",
     description="Élection académique avec détection antifraude, anonymat des votes et administration dédiée."
 )
 app.add_middleware(
