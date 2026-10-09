@@ -354,7 +354,7 @@
             const resultBox = document.getElementById('votersImportResult');
             if (!text.trim()) return;
 
-            const res = await fetch(`${API_URL}/admin/authorized-voters`, {
+            const res = await fetch(`${API_URL}/api/admin/authorized-voters`, {
                 method: 'POST',
                 headers: authHeaders(),
                 body: JSON.stringify({ matricules: text })
@@ -375,7 +375,7 @@
         }
 
         async function removeAuthorizedVoter(matricule) {
-            const res = await fetch(`${API_URL}/admin/authorized-voters/${matricule}`, {
+            const res = await fetch(`${API_URL}/api/admin/authorized-voters/${matricule}`, {
                 method: 'DELETE',
                 headers: authHeaders()
             });
@@ -434,7 +434,7 @@
         }
 
         async function togglePublish() {
-            const res = await fetch(`${API_URL}/admin/publish-results`, {
+            const res = await fetch(`${API_URL}/api/admin/publish-results`, {
                 method: 'POST',
                 headers: authHeaders(),
                 body: JSON.stringify({ published: !resultsPublished })
@@ -522,7 +522,7 @@
 
             if (!name) { alert("Le nom du candidat est requis."); return; }
 
-            const res = await fetch(`${API_URL}/admin/candidates`, {
+            const res = await fetch(`${API_URL}/api/admin/candidates`, {
                 method: 'POST',
                 headers: authHeaders(),
                 body: JSON.stringify({ role, name, photo: selectedPhotoDataUrl || null })
@@ -540,7 +540,7 @@
 
         async function deleteCandidate(role, candidateId) {
             if (!confirm("Retirer ce candidat de la liste ?")) return;
-            const res = await fetch(`${API_URL}/admin/candidates/${role}/${candidateId}`, {
+            const res = await fetch(`${API_URL}/api/admin/candidates/${role}/${candidateId}`, {
                 method: 'DELETE',
                 headers: authHeaders()
             });
@@ -548,7 +548,7 @@
         }
 
         async function exportCsv(endpoint, filename) {
-            const res = await fetch(`${API_URL}/admin/${endpoint}/export`, { headers: authHeaders() });
+            const res = await fetch(`${API_URL}/api/admin/${endpoint}/export`, { headers: authHeaders() });
             if (!res.ok) { alert("Erreur lors de l'export."); return; }
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);
@@ -586,7 +586,7 @@
         }
 
         async function loadReceipts() {
-            const res = await fetch(`${API_URL}api/admin/receipts`, { headers: authHeaders() });
+            const res = await fetch(`${API_URL}/api/admin/receipts`, { headers: authHeaders() });
             if (!res.ok) { logout(); return; }
             const data = await res.json();
             const list = document.getElementById('receiptsList');
@@ -606,7 +606,7 @@
         }
 
         async function loadSchedule() {
-            const res = await fetch(`${API_URL}/admin/schedule`, { headers: authHeaders() });
+            const res = await fetch(`${API_URL}/api/admin/schedule`, { headers: authHeaders() });
             if (!res.ok) { logout(); return; }
             const data = await res.json();
             document.getElementById('scheduleOpen').value = data.open_time ? data.open_time.slice(0, 16) : "";
@@ -627,7 +627,7 @@
                 return;
             }
 
-            const res = await fetch(`${API_URL}/admin/schedule`, {
+            const res = await fetch(`${API_URL}/api/admin/schedule`, {
                 method: 'POST',
                 headers: authHeaders(),
                 body: JSON.stringify({ open_time: openVal, close_time: closeVal })

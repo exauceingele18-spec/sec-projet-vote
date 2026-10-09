@@ -153,7 +153,7 @@
     </footer>
 
     <script>
-        const API_URL = "http://127.0.0.1:8000/api";
+        const API_URL = "httpS://sec-projet-vote-api.onrender.com";
         const MATRICULE_REGEX = /^MAT\d{5}$/;
 
         let allCandidates = {};
@@ -164,7 +164,7 @@
         let voterChoices = [];
 
         document.addEventListener("DOMContentLoaded", async () => {
-            const res = await fetch(`${API_URL}/candidates`);
+            const res = await fetch(`${API_URL}/api/candidates`);
             allCandidates = await res.json();
             await refreshVotingStatus();
         });
@@ -173,7 +173,7 @@
             const banner = document.getElementById('votingStatusBanner');
             const startBtn = document.getElementById('startVoteBtn');
             try {
-                const res = await fetch(`${API_URL}/voting-status`);
+                const res = await fetch(`${API_URL}/api/voting-status`);
                 const data = await res.json();
                 banner.classList.remove('hidden');
                 if (data.open) {
@@ -229,7 +229,7 @@
 
             let res, data;
             try {
-                res = await fetch(`${API_URL}/check-voter`, {
+                res = await fetch(`${API_URL}/api/check-voter`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ voter_id: matriculeInput })
@@ -371,7 +371,7 @@
 
         async function submitFinalBallot() {
             try {
-                const res = await fetch(`${API_URL}/vote`, {
+                const res = await fetch(`${API_URL}/api/vote`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -409,7 +409,7 @@
         }
 
         async function loadComments() {
-            const res = await fetch(`${API_URL}/comments`);
+            const res = await fetch(`${API_URL}/api/comments`);
             const comments = await res.json();
             const list = document.getElementById('commentsList');
 
@@ -440,7 +440,7 @@
             const content = document.getElementById('publicResultsContent');
             content.innerHTML = `<p class="text-slate-500 text-xs">Chargement...</p>`;
             try {
-                const res = await fetch(`${API_URL}/results`);
+                const res = await fetch(`${API_URL}/api/results`);
                 if (!res.ok) {
                     const data = await res.json();
                     content.innerHTML = `<div class="p-4 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm rounded-xl"><i class="fa-solid fa-clock mr-2"></i>${data.detail}</div>`;
